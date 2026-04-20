@@ -1,8 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { getFinanceReportingSummaryForCron } from "@/lib/db/finances";
-import { members } from "@/lib/db/schema";
-import { sendMonthlyFinanceReportEmail } from "@/lib/notifications/send";
 
 function isAuthorized(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -15,6 +11,13 @@ export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
+
+  const [{ db }, { members }, { getFinanceReportingSummaryForCron }, { sendMonthlyFinanceReportEmail }] = await Promise.all([
+    import("@/lib/db"),
+    import("@/lib/db/schema"),
+    import("@/lib/db/finances"),
+    import("@/lib/notifications/send"),
+  ]);
 
   const now = new Date();
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;

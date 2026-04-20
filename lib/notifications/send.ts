@@ -1,9 +1,6 @@
 import { render } from "@react-email/render";
-import { eq } from "drizzle-orm";
 import { Resend } from "resend";
 import { MonthlyFinanceReportEmail, NotificationTestEmail, PasswordResetEmail, WeeklyDigestEmail } from "@/emails/templates";
-import { db } from "@/lib/db";
-import { members, notificationLog } from "@/lib/db/schema";
 
 type NotificationType = "password_reset" | "notification_test" | "weekly_digest" | "monthly_finance_report";
 
@@ -26,15 +23,26 @@ async function logNotification({
   type: NotificationType;
   success: boolean;
 }) {
-  const member = await db.query.members.findFirst({
-    where: eq(members.email, email),
-    columns: { id: true },
-  });
-  await db.insert(notificationLog).values({
-    memberId: member?.id ?? null,
-    type,
-    success,
-  });
+  try {
+    const [{ eq }, { db }, { members, notificationLog }] = await Promise.all([
+      import("drizzle-orm"),
+      import("@/lib/db"),
+      import("@/lib/db/schema"),
+    ]);
+
+    const member = await db.query.members.findFirst({
+      where: eq(members.email, email),
+      columns: { id: true },
+    });
+
+    await db.insert(notificationLog).values({
+      memberId: member?.id ?? null,
+      type,
+      success,
+    });
+  } catch (error) {
+    console.warn("[Notification][LOG_SKIPPED]", error);
+  }
 }
 
 async function sendWithResend({

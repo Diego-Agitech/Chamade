@@ -1,7 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { members } from "@/lib/db/schema";
-import { sendWeeklyDigestEmail } from "@/lib/notifications/send";
 
 function isAuthorized(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -14,6 +11,12 @@ export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
+
+  const [{ db }, { members }, { sendWeeklyDigestEmail }] = await Promise.all([
+    import("@/lib/db"),
+    import("@/lib/db/schema"),
+    import("@/lib/notifications/send"),
+  ]);
 
   const recipients = await db
     .select({

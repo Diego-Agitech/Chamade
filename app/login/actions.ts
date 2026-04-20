@@ -16,10 +16,12 @@ export type LoginFormState = {
 };
 
 export async function loginAction(_: LoginFormState, formData: FormData): Promise<LoginFormState> {
+  const rawEmail = formData.get("email");
+  const rawPassword = formData.get("password");
   const parsed = loginSchema.safeParse({
-    memberId: formData.get("memberId"),
-    email: formData.get("email"),
-    password: formData.get("password"),
+    memberId: String(formData.get("memberId") || "") || undefined,
+    email: typeof rawEmail === "string" && rawEmail.trim().length > 0 ? rawEmail : undefined,
+    password: typeof rawPassword === "string" ? rawPassword : "",
   });
 
   if (!parsed.success) {
