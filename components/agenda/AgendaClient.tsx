@@ -95,13 +95,21 @@ export function AgendaClient({ members, stays, currentMemberId }: AgendaClientPr
         title="Agenda"
         description="Planifie les séjours famille et locations, puis suis l'occupation annuelle."
         actions={
-          <ViewSwitcher
-            activeId={mode}
-            options={[
-              { id: "calendar", label: "Calendrier", onClick: () => setMode("calendar") },
-              { id: "dashboard", label: "Tableau de bord", onClick: () => setMode("dashboard") },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="#agenda-create"
+              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+            >
+              Ajouter un sejour
+            </a>
+            <ViewSwitcher
+              activeId={mode}
+              options={[
+                { id: "calendar", label: "Calendrier", onClick: () => setMode("calendar") },
+                { id: "dashboard", label: "Vue d'ensemble", onClick: () => setMode("dashboard") },
+              ]}
+            />
+          </div>
         }
       />
 
@@ -134,7 +142,7 @@ export function AgendaClient({ members, stays, currentMemberId }: AgendaClientPr
       {mode === "calendar" ? (
         <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
           <div className="mb-4 grid gap-4 lg:grid-cols-[360px_1fr]">
-            <form action={createStayAction} className="space-y-2 rounded-xl border border-zinc-200 p-3">
+            <form id="agenda-create" action={createStayAction} className="space-y-2 rounded-xl border border-zinc-200 p-3">
               <h3 className="text-sm font-semibold text-zinc-900">+ Ajouter un séjour</h3>
               <div className="grid grid-cols-2 gap-2">
                 <input name="startDate" type="date" required className="h-9 rounded-md border border-zinc-300 px-2 text-sm" />

@@ -22,71 +22,69 @@ export async function getDashboardData(year = new Date().getFullYear()) {
   const { start, end } = yearBounds(year);
   const today = new Date().toISOString().slice(0, 10);
 
-  const [totalTodos] = await db.select({ total: count(todos.id) }).from(todos);
-  const [openTodos] = await db.select({ total: count(todos.id) }).from(todos).where(eq(todos.isDone, false));
-  const [overdueTodos] = await db
-    .select({ total: count(todos.id) })
-    .from(todos)
-    .where(and(eq(todos.isDone, false), lte(todos.dueDate, today)));
-
-  const [yearStays] = await db
-    .select({ total: count(stays.id) })
-    .from(stays)
-    .where(and(gte(stays.startDate, start), lte(stays.startDate, end)));
-  const [rentalStays] = await db
-    .select({ total: count(stays.id) })
-    .from(stays)
-    .where(and(gte(stays.startDate, start), lte(stays.startDate, end), eq(stays.isRental, true)));
-
-  const [yearExpenses] = await db
-    .select({ rows: expenses.amount })
-    .from(expenses)
-    .where(and(gte(expenses.date, start), lte(expenses.date, end)));
-  const [yearRevenues] = await db
-    .select({ rows: revenues.netAmount })
-    .from(revenues)
-    .where(and(gte(revenues.date, start), lte(revenues.date, end)));
-
-  const upcomingStays = await db
-    .select({
-      id: stays.id,
-      startDate: stays.startDate,
-      endDate: stays.endDate,
-      isRental: stays.isRental,
-      guestName: stays.rentalGuestName,
-      memberName: members.name,
-    })
-    .from(stays)
-    .leftJoin(members, eq(stays.memberId, members.id))
-    .where(gte(stays.startDate, today))
-    .limit(6);
-
-  const upcomingTodos = await db
-    .select({
-      id: todos.id,
-      title: todos.title,
-      dueDate: todos.dueDate,
-      priority: todos.priority,
-      assignedName: members.name,
-    })
-    .from(todos)
-    .leftJoin(members, eq(todos.assignedTo, members.id))
-    .where(eq(todos.isDone, false))
-    .limit(8);
-
-  const totalExpenseAmount = await db
-    .select({
-      total: expenses.amount,
-    })
-    .from(expenses)
-    .where(and(gte(expenses.date, start), lte(expenses.date, end)));
-
-  const totalRevenueAmount = await db
-    .select({
-      total: revenues.netAmount,
-    })
-    .from(revenues)
-    .where(and(gte(revenues.date, start), lte(revenues.date, end)));
+  const [
+    [totalTodos],
+    [openTodos],
+    [overdueTodos],
+    [yearStays],
+    [rentalStays],
+    upcomingStays,
+    upcomingTodos,
+    totalExpenseAmount,
+    totalRevenueAmount,
+  ] = await Promise.all([
+    db.select({ total: count(todos.id) }).from(todos),
+    db.select({ total: count(todos.id) }).from(todos).where(eq(todos.isDone, false)),
+    db
+      .select({ total: count(todos.id) })
+      .from(todos)
+      .where(and(eq(todos.isDone, false), lte(todos.dueDate, today))),
+    db
+      .select({ total: count(stays.id) })
+      .from(stays)
+      .where(and(gte(stays.startDate, start), lte(stays.startDate, end))),
+    db
+      .select({ total: count(stays.id) })
+      .from(stays)
+      .where(and(gte(stays.startDate, start), lte(stays.startDate, end), eq(stays.isRental, true))),
+    db
+      .select({
+        id: stays.id,
+        startDate: stays.startDate,
+        endDate: stays.endDate,
+        isRental: stays.isRental,
+        guestName: stays.rentalGuestName,
+        memberName: members.name,
+      })
+      .from(stays)
+      .leftJoin(members, eq(stays.memberId, members.id))
+      .where(gte(stays.startDate, today))
+      .limit(6),
+    db
+      .select({
+        id: todos.id,
+        title: todos.title,
+        dueDate: todos.dueDate,
+        priority: todos.priority,
+        assignedName: members.name,
+      })
+      .from(todos)
+      .leftJoin(members, eq(todos.assignedTo, members.id))
+      .where(eq(todos.isDone, false))
+      .limit(8),
+    db
+      .select({
+        total: expenses.amount,
+      })
+      .from(expenses)
+      .where(and(gte(expenses.date, start), lte(expenses.date, end))),
+    db
+      .select({
+        total: revenues.netAmount,
+      })
+      .from(revenues)
+      .where(and(gte(revenues.date, start), lte(revenues.date, end))),
+  ]);
 
   const expenseSum = totalExpenseAmount.reduce((acc, row) => acc + row.total, 0);
   const revenueSum = totalRevenueAmount.reduce((acc, row) => acc + row.total, 0);
@@ -103,9 +101,5 @@ export async function getDashboardData(year = new Date().getFullYear()) {
     },
     upcomingStays,
     upcomingTodos,
-    quickCounts: {
-      expensesRows: yearExpenses ? 1 : 0,
-      revenuesRows: yearRevenues ? 1 : 0,
-    },
   };
 }

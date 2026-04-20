@@ -17,24 +17,31 @@ export async function getMemberById(id: string) {
 }
 
 export async function getLoginProfiles() {
-  const rows = await db.query.members.findMany({
-    columns: {
-      id: true,
-      name: true,
-      email: true,
-      color: true,
-      emoji: true,
-    },
-    orderBy: (table, { asc }) => [asc(table.name)],
-  });
+  try {
+    const rows = await db.query.members.findMany({
+      columns: {
+        id: true,
+        name: true,
+        email: true,
+        color: true,
+        emoji: true,
+      },
+      orderBy: (table, { asc }) => [asc(table.name)],
+    });
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    color: row.color,
-    emoji: row.emoji,
-  }));
+    return rows
+      .filter((row) => row.name?.trim().toLowerCase() !== "chrispadi sci")
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        color: row.color,
+        emoji: row.emoji,
+      }));
+  } catch (error) {
+    console.error("[Auth] Failed to load login profiles", error);
+    return [];
+  }
 }
 
 export async function updateLastLoginAt(memberId: string) {

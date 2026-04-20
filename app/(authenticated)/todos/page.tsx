@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createTodoAction, deleteTodoAction, toggleTodoAction } from "@/app/(authenticated)/todos/actions";
+import { createTodoAction, deleteTodoAction, toggleTodoAction, updateTodoStatusAction } from "@/app/(authenticated)/todos/actions";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/shared/FilterBar";
@@ -46,10 +46,9 @@ export default async function TodosPage({
   };
 
   const kanbanColumns = [
-    { id: "high", label: "Priorité haute", todos: data.todos.filter((todo) => !todo.isDone && todo.priority === "high") },
-    { id: "medium", label: "Priorité moyenne", todos: data.todos.filter((todo) => !todo.isDone && todo.priority === "medium") },
-    { id: "low", label: "Priorité basse", todos: data.todos.filter((todo) => !todo.isDone && todo.priority === "low") },
-    { id: "done", label: "Terminées", todos: data.todos.filter((todo) => todo.isDone) },
+    { id: "todo", label: "A faire", todos: data.todos.filter((todo) => (todo.status ?? (todo.isDone ? "done" : "todo")) === "todo") },
+    { id: "in_progress", label: "En cours", todos: data.todos.filter((todo) => (todo.status ?? (todo.isDone ? "done" : "todo")) === "in_progress") },
+    { id: "done", label: "Fait", todos: data.todos.filter((todo) => (todo.status ?? (todo.isDone ? "done" : "todo")) === "done") },
   ];
 
   return (
@@ -58,14 +57,22 @@ export default async function TodosPage({
         title="Todos"
         description="Suis les tâches par catégorie, par personne et par statut."
         actions={
-          <ViewSwitcher
-            activeId={view}
-            options={[
-              { id: "dashboard", label: "Tableau de bord", href: buildTodosUrl({ nextView: "dashboard", status: "all", assignedTo: "" }) },
-              { id: "list", label: "Liste", href: buildTodosUrl({ nextView: "list", status: "all", assignedTo: "" }) },
-              { id: "kanban", label: "Kanban", href: buildTodosUrl({ nextView: "kanban", status: "all", assignedTo: "" }) },
-            ]}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={buildTodosUrl({ nextView: "list", status: "all", assignedTo: "" }) + "#todo-create"}
+              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+            >
+              Ajouter une tache
+            </Link>
+            <ViewSwitcher
+              activeId={view}
+              options={[
+                { id: "dashboard", label: "Tableau de bord", href: buildTodosUrl({ nextView: "dashboard", status: "all", assignedTo: "" }) },
+                { id: "list", label: "Liste", href: buildTodosUrl({ nextView: "list", status: "all", assignedTo: "" }) },
+                { id: "kanban", label: "Kanban", href: buildTodosUrl({ nextView: "kanban", status: "all", assignedTo: "" }) },
+              ]}
+            />
+          </div>
         }
       />
 
@@ -154,7 +161,7 @@ export default async function TodosPage({
       ) : view === "list" ? (
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-4">
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <section id="todo-create" className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Nouvelle tâche</h2>
               <form action={createTodoAction} className="mt-3 space-y-3">
                 <input type="hidden" name="categoryId" value={data.selectedCategoryId ?? ""} />
@@ -180,6 +187,11 @@ export default async function TodosPage({
                   </select>
                   <input id="dueDate" name="dueDate" type="date" className="h-9 w-full rounded-md border border-border px-2 text-sm" />
                 </div>
+                <select id="status" name="status" defaultValue="todo" className="h-9 w-full rounded-md border border-border px-2 text-sm">
+                  <option value="todo">A faire</option>
+                  <option value="in_progress">En cours</option>
+                  <option value="done">Fait</option>
+                </select>
 
                 <select id="assignedTo" name="assignedTo" className="h-9 w-full rounded-md border border-border px-2 text-sm">
                   <option value="">Non assigné</option>
@@ -245,6 +257,21 @@ export default async function TodosPage({
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <form action={updateTodoStatusAction}>
+                          <input type="hidden" name="todoId" value={todo.id} />
+                          <select
+                            name="status"
+                            defaultValue={todo.status ?? (todo.isDone ? "done" : "todo")}
+                            className="rounded-md border border-border px-2 py-1.5 text-xs"
+                          >
+                            <option value="todo">A faire</option>
+                            <option value="in_progress">En cours</option>
+                            <option value="done">Fait</option>
+                          </select>
+                          <button type="submit" className="ml-1 rounded-md bg-muted px-2 py-1.5 text-xs text-foreground">
+                            MAJ
+                          </button>
+                        </form>
                         <form action={toggleTodoAction}>
                           <input type="hidden" name="todoId" value={todo.id} />
                           <input type="hidden" name="isDone" value={todo.isDone ? "false" : "true"} />
@@ -274,8 +301,8 @@ export default async function TodosPage({
       ) : (
         <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">Kanban</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Vue colonne par priorité, avec tâches terminées séparées.</p>
-          <div className="mt-4 grid gap-4 xl:grid-cols-4">
+          <p className="mt-1 text-sm text-muted-foreground">Vue colonne par statut d&apos;avancement.</p>
+          <div className="mt-4 grid gap-4 xl:grid-cols-3">
             {kanbanColumns.map((column) => (
               <div key={column.id} className="rounded-xl border border-border bg-muted/40 p-3">
                 <div className="mb-2 flex items-center justify-between">

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { members, todoCategories, todos } from "@/lib/db/schema";
 
 export type TodoPriority = "low" | "medium" | "high";
+export type TodoStatus = "todo" | "in_progress" | "done";
 
 async function requireSessionMember() {
   const session = await auth();
@@ -67,6 +68,7 @@ export async function getTodosPageData(
           title: todos.title,
           description: todos.description,
           isDone: todos.isDone,
+          status: todos.status,
           priority: todos.priority,
           dueDate: todos.dueDate,
           assignedTo: todos.assignedTo,
@@ -138,6 +140,7 @@ export async function createTodo(input: {
   title: string;
   description?: string;
   priority: TodoPriority;
+  status: TodoStatus;
   assignedTo?: string;
   dueDate?: string;
 }) {
@@ -148,6 +151,9 @@ export async function createTodo(input: {
     title: input.title,
     description: input.description || null,
     priority: input.priority,
+    status: input.status,
+    isDone: input.status === "done",
+    completedAt: input.status === "done" ? new Date().toISOString() : null,
     createdBy: sessionUser.id,
     assignedTo: input.assignedTo || null,
     dueDate: input.dueDate || null,
@@ -160,6 +166,21 @@ export async function toggleTodo(todoId: string, isDone: boolean) {
   await db
     .update(todos)
     .set({
+      isDone,
+      status: isDone ? "done" : "todo",
+      completedAt: isDone ? new Date().toISOString() : null,
+    })
+    .where(eq(todos.id, todoId));
+}
+
+export async function updateTodoStatus(todoId: string, status: TodoStatus) {
+  await requireSessionMember();
+
+  const isDone = status === "done";
+  await db
+    .update(todos)
+    .set({
+      status,
       isDone,
       completedAt: isDone ? new Date().toISOString() : null,
     })

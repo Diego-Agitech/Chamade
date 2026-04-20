@@ -57,6 +57,7 @@ export const todos = sqliteTable("todos", {
   title: text("title").notNull(),
   description: text("description"),
   isDone: integer("is_done", { mode: "boolean" }).default(false),
+  status: text("status", { enum: ["todo", "in_progress", "done"] }).default("todo"),
   priority: text("priority", { enum: ["low", "medium", "high"] }).default("medium"),
   createdBy: text("created_by").references(() => members.id),
   assignedTo: text("assigned_to").references(() => members.id),

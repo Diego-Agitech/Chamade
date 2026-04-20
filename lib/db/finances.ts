@@ -26,125 +26,129 @@ export async function getFinancesPageData(year = new Date().getFullYear(), tab: 
   const { start, end } = yearRange(year);
   const { start: prevStart, end: prevEnd } = yearRange(year - 1);
 
-  const expenseTotals = await db
-    .select({
-      opex: sql<number>`sum(case when ${expenses.nature} = 'OPEX' then ${expenses.amount} else 0 end)`,
-      capex: sql<number>`sum(case when ${expenses.nature} = 'CAPEX' then ${expenses.amount} else 0 end)`,
-    })
-    .from(expenses)
-    .where(and(gte(expenses.date, start), lte(expenses.date, end)));
-
-  const previousOpexTotals = await db
-    .select({
-      opex: sql<number>`sum(case when ${expenses.nature} = 'OPEX' then ${expenses.amount} else 0 end)`,
-    })
-    .from(expenses)
-    .where(and(gte(expenses.date, prevStart), lte(expenses.date, prevEnd)));
-
-  const revenueTotals = await db
-    .select({
-      net: sql<number>`sum(${revenues.netAmount})`,
-      rental: sql<number>`sum(case when ${revenues.source} = 'rental' then ${revenues.netAmount} else 0 end)`,
-      vignes: sql<number>`sum(case when ${revenues.source} = 'vignes' then ${revenues.netAmount} else 0 end)`,
-      divers: sql<number>`sum(case when ${revenues.source} = 'divers' then ${revenues.netAmount} else 0 end)`,
-    })
-    .from(revenues)
-    .where(and(gte(revenues.date, start), lte(revenues.date, end)));
-
-  const activeCategories = await db
-    .select({
-      id: expenseCategories.id,
-      name: expenseCategories.name,
-      nature: expenseCategories.nature,
-      zone: expenseCategories.zone,
-      amortizationYears: expenseCategories.amortizationYears,
-      color: expenseCategories.color,
-    })
-    .from(expenseCategories)
-    .where(eq(expenseCategories.isActive, true))
-    .orderBy(asc(expenseCategories.sortOrder), asc(expenseCategories.name));
-
-  const allMembers = await db
-    .select({
-      id: members.id,
-      name: members.name,
-      color: members.color,
-    })
-    .from(members)
-    .orderBy(asc(members.name));
-
-  const expensesRows = await db
-    .select({
-      id: expenses.id,
-      nature: expenses.nature,
-      date: expenses.date,
-      description: expenses.description,
-      amount: expenses.amount,
-      vendor: expenses.vendor,
-      isRecurring: expenses.isRecurring,
-      recurrenceFrequency: expenses.recurrenceFrequency,
-      categoryName: expenseCategories.name,
-      categoryZone: expenseCategories.zone,
-      categoryColor: expenseCategories.color,
-      paidByName: members.name,
-    })
-    .from(expenses)
-    .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
-    .leftJoin(members, eq(expenses.paidBy, members.id))
-    .where(and(gte(expenses.date, start), lte(expenses.date, end)))
-    .orderBy(desc(expenses.date), desc(expenses.createdAt));
-
-  const revenueRows = await db
-    .select({
-      id: revenues.id,
-      source: revenues.source,
-      subcategory: revenues.subcategory,
-      date: revenues.date,
-      description: revenues.description,
-      payerName: revenues.payerName,
-      grossAmount: revenues.grossAmount,
-      deductions: revenues.deductions,
-      netAmount: revenues.netAmount,
-      receivedByName: members.name,
-    })
-    .from(revenues)
-    .leftJoin(members, eq(revenues.receivedBy, members.id))
-    .where(and(gte(revenues.date, start), lte(revenues.date, end)))
-    .orderBy(desc(revenues.date), desc(revenues.createdAt));
-
-  const compensationRows = await db
-    .select({
-      id: compensationPayments.id,
-      date: compensationPayments.date,
-      amount: compensationPayments.amount,
-      notes: compensationPayments.notes,
-      fromMemberId: compensationPayments.fromMemberId,
-      toMemberId: compensationPayments.toMemberId,
-    })
-    .from(compensationPayments)
-    .where(and(gte(compensationPayments.date, start), lte(compensationPayments.date, end)))
-    .orderBy(desc(compensationPayments.date), desc(compensationPayments.createdAt));
-
-  const memberExpenseRows = await db
-    .select({
-      memberId: members.id,
-      memberName: members.name,
-      paid: sql<number>`sum(coalesce(${expenses.amount},0))`,
-    })
-    .from(members)
-    .leftJoin(expenses, eq(expenses.paidBy, members.id))
-    .where(and(gte(expenses.date, start), lte(expenses.date, end)))
-    .groupBy(members.id, members.name);
-
-  const memberRevenueRows = await db
-    .select({
-      memberId: members.id,
-      received: sql<number>`sum(coalesce(${revenues.netAmount},0))`,
-    })
-    .from(members)
-    .leftJoin(revenues, eq(revenues.receivedBy, members.id))
-    .where(and(gte(revenues.date, start), lte(revenues.date, end)))
-    .groupBy(members.id);
+  const [
+    expenseTotals,
+    previousOpexTotals,
+    revenueTotals,
+    activeCategories,
+    allMembers,
+    expensesRows,
+    revenueRows,
+    compensationRows,
+    memberExpenseRows,
+    memberRevenueRows,
+  ] = await Promise.all([
+    db
+      .select({
+        opex: sql<number>`sum(case when ${expenses.nature} = 'OPEX' then ${expenses.amount} else 0 end)`,
+        capex: sql<number>`sum(case when ${expenses.nature} = 'CAPEX' then ${expenses.amount} else 0 end)`,
+      })
+      .from(expenses)
+      .where(and(gte(expenses.date, start), lte(expenses.date, end))),
+    db
+      .select({
+        opex: sql<number>`sum(case when ${expenses.nature} = 'OPEX' then ${expenses.amount} else 0 end)`,
+      })
+      .from(expenses)
+      .where(and(gte(expenses.date, prevStart), lte(expenses.date, prevEnd))),
+    db
+      .select({
+        net: sql<number>`sum(${revenues.netAmount})`,
+        rental: sql<number>`sum(case when ${revenues.source} = 'rental' then ${revenues.netAmount} else 0 end)`,
+        vignes: sql<number>`sum(case when ${revenues.source} = 'vignes' then ${revenues.netAmount} else 0 end)`,
+        divers: sql<number>`sum(case when ${revenues.source} = 'divers' then ${revenues.netAmount} else 0 end)`,
+      })
+      .from(revenues)
+      .where(and(gte(revenues.date, start), lte(revenues.date, end))),
+    db
+      .select({
+        id: expenseCategories.id,
+        name: expenseCategories.name,
+        nature: expenseCategories.nature,
+        zone: expenseCategories.zone,
+        amortizationYears: expenseCategories.amortizationYears,
+        color: expenseCategories.color,
+      })
+      .from(expenseCategories)
+      .where(eq(expenseCategories.isActive, true))
+      .orderBy(asc(expenseCategories.sortOrder), asc(expenseCategories.name)),
+    db
+      .select({
+        id: members.id,
+        name: members.name,
+        color: members.color,
+      })
+      .from(members)
+      .orderBy(asc(members.name)),
+    db
+      .select({
+        id: expenses.id,
+        nature: expenses.nature,
+        date: expenses.date,
+        description: expenses.description,
+        amount: expenses.amount,
+        vendor: expenses.vendor,
+        isRecurring: expenses.isRecurring,
+        recurrenceFrequency: expenses.recurrenceFrequency,
+        categoryName: expenseCategories.name,
+        categoryZone: expenseCategories.zone,
+        categoryColor: expenseCategories.color,
+        paidByName: members.name,
+      })
+      .from(expenses)
+      .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      .leftJoin(members, eq(expenses.paidBy, members.id))
+      .where(and(gte(expenses.date, start), lte(expenses.date, end)))
+      .orderBy(desc(expenses.date), desc(expenses.createdAt)),
+    db
+      .select({
+        id: revenues.id,
+        source: revenues.source,
+        subcategory: revenues.subcategory,
+        date: revenues.date,
+        description: revenues.description,
+        payerName: revenues.payerName,
+        grossAmount: revenues.grossAmount,
+        deductions: revenues.deductions,
+        netAmount: revenues.netAmount,
+        receivedByName: members.name,
+      })
+      .from(revenues)
+      .leftJoin(members, eq(revenues.receivedBy, members.id))
+      .where(and(gte(revenues.date, start), lte(revenues.date, end)))
+      .orderBy(desc(revenues.date), desc(revenues.createdAt)),
+    db
+      .select({
+        id: compensationPayments.id,
+        date: compensationPayments.date,
+        amount: compensationPayments.amount,
+        notes: compensationPayments.notes,
+        fromMemberId: compensationPayments.fromMemberId,
+        toMemberId: compensationPayments.toMemberId,
+      })
+      .from(compensationPayments)
+      .where(and(gte(compensationPayments.date, start), lte(compensationPayments.date, end)))
+      .orderBy(desc(compensationPayments.date), desc(compensationPayments.createdAt)),
+    db
+      .select({
+        memberId: members.id,
+        memberName: members.name,
+        paid: sql<number>`sum(coalesce(${expenses.amount},0))`,
+      })
+      .from(members)
+      .leftJoin(expenses, eq(expenses.paidBy, members.id))
+      .where(and(gte(expenses.date, start), lte(expenses.date, end)))
+      .groupBy(members.id, members.name),
+    db
+      .select({
+        memberId: members.id,
+        received: sql<number>`sum(coalesce(${revenues.netAmount},0))`,
+      })
+      .from(members)
+      .leftJoin(revenues, eq(revenues.receivedBy, members.id))
+      .where(and(gte(revenues.date, start), lte(revenues.date, end)))
+      .groupBy(members.id),
+  ]);
 
   const paidByMember = new Map(memberExpenseRows.map((row) => [row.memberId, row.paid ?? 0]));
   const receivedByMember = new Map(memberRevenueRows.map((row) => [row.memberId, row.received ?? 0]));

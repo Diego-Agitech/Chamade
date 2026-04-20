@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, CheckSquare, LayoutDashboard, Settings, TrendingUp } from "lucide-react";
+import { Calendar, CheckSquare, LayoutDashboard, Phone, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
+  { href: "/contacts", label: "Contacts", icon: Phone },
   { href: "/agenda", label: "Agenda", icon: Calendar },
   { href: "/todos", label: "Tâches", icon: CheckSquare },
   { href: "/finances", label: "Finances", icon: TrendingUp },
-  { href: "/settings", label: "Profil", icon: Settings },
 ];
 
 export function BottomNav() {
@@ -24,6 +24,7 @@ export function BottomNav() {
           <Link
             key={href}
             href={href}
+            prefetch
             className={cn(
               "flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[11px] font-medium transition-colors",
               active ? "text-chamade-terracotta" : "text-muted-foreground hover:text-foreground"

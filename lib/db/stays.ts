@@ -27,31 +27,32 @@ async function requireSessionMember() {
 export async function getAgendaPageData() {
   const sessionUser = await requireSessionMember();
 
-  const allMembers = await db
-    .select({
-      id: members.id,
-      name: members.name,
-      color: members.color,
-    })
-    .from(members)
-    .orderBy(asc(members.name));
-
-  const stayRows = await db
-    .select({
-      id: stays.id,
-      memberId: stays.memberId,
-      memberName: members.name,
-      memberColor: members.color,
-      startDate: stays.startDate,
-      endDate: stays.endDate,
-      isRental: stays.isRental,
-      rentalGuestName: stays.rentalGuestName,
-      notes: stays.notes,
-      createdAt: stays.createdAt,
-    })
-    .from(stays)
-    .leftJoin(members, eq(stays.memberId, members.id))
-    .orderBy(desc(stays.startDate), desc(stays.createdAt));
+  const [allMembers, stayRows] = await Promise.all([
+    db
+      .select({
+        id: members.id,
+        name: members.name,
+        color: members.color,
+      })
+      .from(members)
+      .orderBy(asc(members.name)),
+    db
+      .select({
+        id: stays.id,
+        memberId: stays.memberId,
+        memberName: members.name,
+        memberColor: members.color,
+        startDate: stays.startDate,
+        endDate: stays.endDate,
+        isRental: stays.isRental,
+        rentalGuestName: stays.rentalGuestName,
+        notes: stays.notes,
+        createdAt: stays.createdAt,
+      })
+      .from(stays)
+      .leftJoin(members, eq(stays.memberId, members.id))
+      .orderBy(desc(stays.startDate), desc(stays.createdAt)),
+  ]);
 
   const stayIds = stayRows.map((stay) => stay.id);
   const revenueRows = stayIds.length

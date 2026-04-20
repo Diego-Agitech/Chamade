@@ -14,7 +14,7 @@ export function KeyContactsPanel({ contacts }: { contacts: KeyContact[] }) {
     <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg font-semibold text-zinc-900">Contacts clé</h2>
-        <a href="/settings/contacts" className="text-xs font-medium text-zinc-600 underline underline-offset-2">
+        <a href="/contacts" className="text-xs font-medium text-zinc-600 underline underline-offset-2">
           Gérer
         </a>
       </div>

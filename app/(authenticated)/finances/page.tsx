@@ -30,6 +30,13 @@ export default async function FinancesPage({
   const reportingData = tab === "reporting" ? await getFinanceReportingData(year) : null;
   const opexCategories = data.categories.filter((c) => c.nature === "OPEX");
   const capexCategories = data.categories.filter((c) => c.nature === "CAPEX");
+  const addRecordHrefByTab: Record<Tab, string> = {
+    reporting: "/finances?tab=opex",
+    opex: "#finance-create",
+    capex: "#finance-create",
+    revenues: "#finance-create",
+    claims: "#finance-create",
+  };
 
   return (
     <div className="space-y-5">
@@ -37,14 +44,19 @@ export default async function FinancesPage({
         title="Finances"
         description={`Pilotage financier de ${FINANCE_ENTITY_NAME}`}
         actions={
-          <ViewSwitcher
-            activeId={tab}
-            options={tabs.map((item) => ({
-              id: item.id,
-              label: item.label,
-              href: `/finances?tab=${item.id}&year=${year}`,
-            }))}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <a href={addRecordHrefByTab[tab]} className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+              Ajouter un enregistrement
+            </a>
+            <ViewSwitcher
+              activeId={tab}
+              options={tabs.map((item) => ({
+                id: item.id,
+                label: item.label,
+                href: `/finances?tab=${item.id}&year=${year}`,
+              }))}
+            />
+          </div>
         }
       />
 
@@ -72,7 +84,7 @@ export default async function FinancesPage({
 
       {tab === "claims" ? (
         <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div id="finance-create" className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Paiement de compensation</h2>
             <p className="mt-1 text-xs text-zinc-600">Permet d&apos;équilibrer les créances entre membres.</p>
             <form action={createCompensationPaymentAction} className="mt-3 space-y-2">
@@ -179,7 +191,7 @@ export default async function FinancesPage({
 
       {tab === "opex" || tab === "capex" ? (
         <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div id="finance-create" className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               Ajouter une dépense {tab === "opex" ? "OPEX - Dépenses courantes" : "CAPEX - Travaux/Investissements"}
             </h2>
@@ -227,7 +239,7 @@ export default async function FinancesPage({
             </form>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div id="finance-create" className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">
               {tab === "opex" ? "OPEX - Dépenses courantes" : "CAPEX - Travaux/Investissements"}
             </h2>

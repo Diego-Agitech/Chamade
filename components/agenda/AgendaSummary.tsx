@@ -70,6 +70,11 @@ export function AgendaSummary({ filteredStays, selectedYear, members }: { filter
         className="md:grid-cols-3 xl:grid-cols-5"
       />
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <StayList title="Prochains séjours" stays={upcoming} />
+        <StayList title="Derniers séjours passés" stays={recentPast} />
+      </div>
+
       <div>
         <h3 className="mb-2 text-sm font-semibold text-foreground">Heatmap annuelle</h3>
         <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-chamade-cream/30 p-2">
@@ -80,11 +85,6 @@ export function AgendaSummary({ filteredStays, selectedYear, members }: { filter
             return <div key={dayIso} className="h-3 w-3 rounded-[2px]" style={{ backgroundColor: bg }} title={dayIso} />;
           })}
         </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <StayList title="Prochains séjours" stays={upcoming} />
-        <StayList title="Derniers séjours passés" stays={recentPast} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
