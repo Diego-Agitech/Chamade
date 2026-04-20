@@ -7,9 +7,35 @@ export type TodoPriority = "low" | "medium" | "high";
 export type TodoStatus = "todo" | "in_progress" | "done";
 
 function isMissingTodoStatusColumnError(error: unknown) {
-  if (!(error instanceof Error)) return false;
-  const message = error.message.toLowerCase();
-  return message.includes("no such column") && message.includes("todos.status");
+  const chunks: string[] = [];
+
+  const pushText = (value: unknown) => {
+    if (typeof value === "string") {
+      chunks.push(value.toLowerCase());
+    }
+  };
+
+  const walk = (value: unknown) => {
+    if (!value || typeof value !== "object") return;
+    if (value instanceof Error) {
+      pushText(value.message);
+      walk((value as { cause?: unknown }).cause);
+    }
+
+    const record = value as Record<string, unknown>;
+    pushText(record.message);
+
+    if (record.proto && typeof record.proto === "object") {
+      const proto = record.proto as Record<string, unknown>;
+      pushText(proto.message);
+    }
+
+    walk(record.cause);
+  };
+
+  walk(error);
+  const fullMessage = chunks.join(" ");
+  return fullMessage.includes("no such column") && fullMessage.includes("todos.status");
 }
 
 async function requireSessionMember() {
