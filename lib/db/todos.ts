@@ -74,7 +74,7 @@ export async function getTodosPageData(
         title: todos.title,
         description: todos.description,
         isDone: todos.isDone,
-        status: todos.status,
+        status: sql<TodoStatus>`coalesce(${todos.status}, 'todo')`,
         priority: todos.priority,
         dueDate: todos.dueDate,
         assignedTo: todos.assignedTo,
