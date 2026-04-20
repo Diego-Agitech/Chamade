@@ -9,7 +9,6 @@ const tabs = [
   { href: "/settings/session", label: "Session" },
   { href: "/settings/password", label: "Sécurité" },
   { href: "/settings/notifications", label: "Notifications" },
-  { href: "/settings/contacts", label: "Contacts clé" },
   { href: "/settings/categories", label: "Catégories" },
 ];
 

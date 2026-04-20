@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createTodoAction, deleteTodoAction, toggleTodoAction } from "@/app/(authenticated)/todos/actions";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { KpiGrid } from "@/components/shared/KpiGrid";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -68,8 +70,8 @@ export default async function TodosPage({
       />
 
       <FilterBar>
-        <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">Catégorie</label>
-        <span className="inline-flex h-9 items-center rounded-md border border-zinc-300 bg-zinc-50 px-3 text-sm text-zinc-700">
+        <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catégorie</label>
+        <span className="inline-flex h-9 items-center rounded-md border border-border bg-muted px-3 text-sm text-foreground">
           {data.categories.find((category) => category.id === data.selectedCategoryId)?.name ?? "Toutes les catégories"}
         </span>
         <div className="flex flex-wrap gap-1">
@@ -77,7 +79,7 @@ export default async function TodosPage({
             <Link
               key={category.id}
               href={buildTodosUrl({ category: category.id, assignedTo: data.activeFilters.assignedTo || "", status: data.activeFilters.status, nextView: view })}
-              className={`rounded-md px-2 py-1 text-xs ${category.id === data.selectedCategoryId ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700"}`}
+              className={`rounded-md px-2 py-1 text-xs ${category.id === data.selectedCategoryId ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
             >
               {category.name}
             </Link>
@@ -86,7 +88,7 @@ export default async function TodosPage({
       </FilterBar>
 
       {view === "dashboard" ? (
-        <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <KpiGrid
             items={[
               { title: "Total tâches", value: allTodos.toString() },
@@ -97,8 +99,8 @@ export default async function TodosPage({
           />
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-zinc-200 p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Répartition par catégorie</h2>
+            <div className="rounded-xl border border-border p-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Répartition par catégorie</h2>
               <div className="mt-3 space-y-2">
                 {data.categories.map((category) => (
                   <div key={category.id} className="flex items-center justify-between text-sm">
@@ -111,20 +113,20 @@ export default async function TodosPage({
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 p-4">
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">Todos par personne</h2>
+            <div className="rounded-xl border border-border p-4">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Todos par personne</h2>
               <div className="space-y-2">
                 {data.memberBreakdown.map((row) => (
                   <Link
                     key={row.memberId}
                     href={buildTodosUrl({ assignedTo: row.memberId, status: "all" })}
-                    className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-sm hover:bg-zinc-50"
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm hover:bg-muted/50"
                   >
                     <span className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: row.memberColor }} />
                       {row.memberName}
                     </span>
-                    <span className="font-medium text-zinc-700">
+                    <span className="font-medium text-foreground">
                       {row.open}/{row.total}
                     </span>
                   </Link>
@@ -132,16 +134,16 @@ export default async function TodosPage({
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Tâches en retard</h2>
+            <div className="rounded-xl border border-border p-4">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Tâches en retard</h2>
               <div className="mt-3 space-y-2">
                 {overdue.length === 0 ? (
-                  <p className="text-sm text-zinc-500">Aucune tâche en retard.</p>
+                  <EmptyState title="Tout est en ordre — rien à faire ici." description="Aucune tâche en retard pour l'instant." className="py-6" />
                 ) : (
                   overdue.slice(0, 8).map((todo) => (
                     <div key={todo.id} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
-                      <p className="font-medium text-zinc-900">{todo.title}</p>
-                      <p className="text-xs text-zinc-600">Échéance: {todo.dueDate}</p>
+                      <p className="font-medium text-foreground">{todo.title}</p>
+                      <p className="text-xs text-muted-foreground">Échéance: {todo.dueDate}</p>
                     </div>
                   ))
                 )}
@@ -152,34 +154,34 @@ export default async function TodosPage({
       ) : view === "list" ? (
         <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-4">
-            <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Nouvelle tâche</h2>
+            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Nouvelle tâche</h2>
               <form action={createTodoAction} className="mt-3 space-y-3">
                 <input type="hidden" name="categoryId" value={data.selectedCategoryId ?? ""} />
                 <div className="space-y-1">
-                  <label htmlFor="title" className="text-xs font-medium text-zinc-600">
+                  <label htmlFor="title" className="text-xs font-medium text-muted-foreground">
                     Titre
                   </label>
-                  <input id="title" name="title" required minLength={2} className="h-9 w-full rounded-md border border-zinc-300 px-3 text-sm" />
+                  <input id="title" name="title" required minLength={2} className="h-9 w-full rounded-md border border-border px-3 text-sm" />
                 </div>
 
                 <div className="space-y-1">
-                  <label htmlFor="description" className="text-xs font-medium text-zinc-600">
+                  <label htmlFor="description" className="text-xs font-medium text-muted-foreground">
                     Description
                   </label>
-                  <textarea id="description" name="description" rows={3} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
+                  <textarea id="description" name="description" rows={3} className="w-full rounded-md border border-border px-3 py-2 text-sm" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <select id="priority" name="priority" defaultValue="medium" className="h-9 w-full rounded-md border border-zinc-300 px-2 text-sm">
+                  <select id="priority" name="priority" defaultValue="medium" className="h-9 w-full rounded-md border border-border px-2 text-sm">
                     <option value="low">Basse</option>
                     <option value="medium">Moyenne</option>
                     <option value="high">Haute</option>
                   </select>
-                  <input id="dueDate" name="dueDate" type="date" className="h-9 w-full rounded-md border border-zinc-300 px-2 text-sm" />
+                  <input id="dueDate" name="dueDate" type="date" className="h-9 w-full rounded-md border border-border px-2 text-sm" />
                 </div>
 
-                <select id="assignedTo" name="assignedTo" className="h-9 w-full rounded-md border border-zinc-300 px-2 text-sm">
+                <select id="assignedTo" name="assignedTo" className="h-9 w-full rounded-md border border-border px-2 text-sm">
                   <option value="">Non assigné</option>
                   {data.members.map((member) => (
                     <option key={member.id} value={member.id}>
@@ -188,23 +190,23 @@ export default async function TodosPage({
                   ))}
                 </select>
 
-                <button type="submit" className="h-9 w-full rounded-md bg-zinc-900 text-sm font-medium text-white transition hover:bg-zinc-700">
+                <button type="submit" className="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground transition hover:opacity-90">
                   Ajouter
                 </button>
               </form>
             </section>
           </aside>
 
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-zinc-900">Liste des tâches</h2>
-            <p className="mt-1 text-sm text-zinc-600">Tri: non terminées, priorité, date limite.</p>
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Liste des tâches</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Tri: non terminées, priorité, date limite.</p>
             {(data.activeFilters.assignedTo || data.activeFilters.status !== "all") && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {data.activeFilters.assignedTo && (
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700">Filtre personne actif</span>
+                  <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">Filtre personne actif</span>
                 )}
                 {data.activeFilters.status !== "all" && (
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-700">Statut: {data.activeFilters.status}</span>
+                  <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">Statut: {data.activeFilters.status}</span>
                 )}
                 <Link href={buildTodosUrl({ assignedTo: "", status: "all", nextView: "list" })} className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
                   Effacer filtres
@@ -214,22 +216,22 @@ export default async function TodosPage({
 
             <div className="mt-6 space-y-3">
               {data.todos.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-zinc-300 px-4 py-6 text-sm text-zinc-600">
-                  Aucune tâche dans cette catégorie pour le moment.
-                </p>
+                <EmptyState title="Tout est en ordre — rien à faire ici." description="Aucune tâche dans cette catégorie pour le moment." className="py-8" />
               ) : (
                 data.todos.map((todo) => (
                   <article
                     key={todo.id}
                     className={`rounded-xl border px-4 py-3 ${
-                      todo.isDone ? "border-zinc-200 bg-zinc-50 text-zinc-500" : "border-zinc-200 bg-white"
+                      todo.isDone ? "border-border bg-muted text-muted-foreground" : "border-border bg-card"
                     }`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className={`text-sm font-semibold ${todo.isDone ? "line-through" : ""}`}>{todo.title}</h3>
-                          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700">{todo.priority}</span>
+                          <Badge tone={todo.priority === "high" ? "warm" : todo.priority === "medium" ? "gold" : "neutral"}>
+                            {todo.priority === "high" ? "Haute" : todo.priority === "medium" ? "Moyenne" : "Basse"}
+                          </Badge>
                           {todo.dueDate ? (
                             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">{todo.dueDate}</span>
                           ) : null}
@@ -249,7 +251,7 @@ export default async function TodosPage({
                           <button
                             type="submit"
                             className={`rounded-md px-2.5 py-1.5 text-xs font-medium ${
-                              todo.isDone ? "bg-zinc-200 text-zinc-700" : "bg-emerald-100 text-emerald-800"
+                              todo.isDone ? "bg-muted text-muted-foreground" : "bg-emerald-100 text-emerald-800"
                             }`}
                           >
                             {todo.isDone ? "Rouvrir" : "Terminer"}
@@ -270,25 +272,25 @@ export default async function TodosPage({
           </section>
         </div>
       ) : (
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-900">Kanban</h2>
-          <p className="mt-1 text-sm text-zinc-600">Vue colonne par priorité, avec tâches terminées séparées.</p>
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">Kanban</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Vue colonne par priorité, avec tâches terminées séparées.</p>
           <div className="mt-4 grid gap-4 xl:grid-cols-4">
             {kanbanColumns.map((column) => (
-              <div key={column.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+              <div key={column.id} className="rounded-xl border border-border bg-muted/40 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-zinc-900">{column.label}</h3>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-xs text-zinc-600">{column.todos.length}</span>
+                  <h3 className="text-sm font-semibold text-foreground">{column.label}</h3>
+                  <span className="rounded-full bg-card px-2 py-0.5 text-xs text-muted-foreground">{column.todos.length}</span>
                 </div>
                 <div className="space-y-2">
                   {column.todos.length === 0 ? (
-                    <p className="rounded-md border border-dashed border-zinc-300 px-2 py-3 text-xs text-zinc-500">Aucune tâche</p>
+                    <EmptyState title="Aucune tâche" description="Cette colonne est vide." className="px-2 py-4" />
                   ) : (
                     column.todos.map((todo) => (
-                      <article key={todo.id} className="rounded-md border border-zinc-200 bg-white p-2 text-sm">
-                        <p className={`font-medium text-zinc-900 ${todo.isDone ? "line-through" : ""}`}>{todo.title}</p>
-                        {todo.dueDate ? <p className="mt-1 text-xs text-zinc-500">Échéance: {todo.dueDate}</p> : null}
-                        {todo.assignedName ? <p className="mt-1 text-xs text-zinc-500">Assigné à {todo.assignedName}</p> : null}
+                      <article key={todo.id} className="rounded-md border border-border bg-card p-2 text-sm">
+                        <p className={`font-medium text-foreground ${todo.isDone ? "line-through" : ""}`}>{todo.title}</p>
+                        {todo.dueDate ? <p className="mt-1 text-xs text-muted-foreground">Échéance: {todo.dueDate}</p> : null}
+                        {todo.assignedName ? <p className="mt-1 text-xs text-muted-foreground">Assigné à {todo.assignedName}</p> : null}
                       </article>
                     ))
                   )}

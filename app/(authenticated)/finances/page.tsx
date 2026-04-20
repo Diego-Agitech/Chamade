@@ -1,19 +1,21 @@
 import { createCompensationPaymentAction, createExpenseAction, createRevenueAction } from "@/app/(authenticated)/finances/actions";
 import { FinancesClient } from "@/components/finances/FinancesClient";
+import { ReportingCharts } from "@/components/finances/ReportingCharts";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ViewSwitcher } from "@/components/shared/ViewSwitcher";
-import { getFinancesPageData } from "@/lib/db/finances";
+import { EmptyState } from "@/components/ui/empty-state";
+import { getFinanceReportingData, getFinancesPageData } from "@/lib/db/finances";
 
-type Tab = "dashboard" | "opex" | "capex" | "revenues" | "reporting";
+type Tab = "reporting" | "opex" | "capex" | "revenues" | "claims";
 const FINANCE_ENTITY_NAME = "ChrisPadi SCI";
 
 const tabs: Array<{ id: Tab; label: string }> = [
-  { id: "dashboard", label: "Tableau de bord" },
+  { id: "reporting", label: "Reporting" },
   { id: "opex", label: "OPEX - Dépenses courantes" },
   { id: "capex", label: "CAPEX - Travaux/Investissements" },
   { id: "revenues", label: "Revenus" },
-  { id: "reporting", label: "Reporting" },
+  { id: "claims", label: "Créances / Compensations" },
 ];
 
 export default async function FinancesPage({
@@ -22,9 +24,10 @@ export default async function FinancesPage({
   searchParams: Promise<{ tab?: string; year?: string }>;
 }) {
   const params = await searchParams;
-  const tab = (params.tab as Tab) || "dashboard";
+  const tab = (params.tab as Tab) || "reporting";
   const year = Number(params.year || new Date().getFullYear());
   const data = await getFinancesPageData(year, tab);
+  const reportingData = tab === "reporting" ? await getFinanceReportingData(year) : null;
   const opexCategories = data.categories.filter((c) => c.nature === "OPEX");
   const capexCategories = data.categories.filter((c) => c.nature === "CAPEX");
 
@@ -65,9 +68,9 @@ export default async function FinancesPage({
         </span>
       </FilterBar>
 
-      <FinancesClient data={data} />
+      {tab === "reporting" ? <FinancesClient data={data} /> : null}
 
-      {tab === "dashboard" ? (
+      {tab === "claims" ? (
         <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Paiement de compensation</h2>
@@ -126,7 +129,7 @@ export default async function FinancesPage({
               <h2 className="text-lg font-semibold text-zinc-900">Paiements de compensation</h2>
               <div className="mt-3 space-y-2">
                 {data.compensations.length === 0 ? (
-                  <p className="text-sm text-zinc-500">Aucun paiement enregistré.</p>
+                  <EmptyState title="Aucun paiement de compensation" description="Les paiements apparaîtront ici dès le premier enregistrement." className="py-6" />
                 ) : (
                   data.compensations.map((row) => (
                     <div key={row.id} className="rounded-lg border border-zinc-200 px-3 py-2 text-sm">
@@ -153,7 +156,7 @@ export default async function FinancesPage({
               <p className="mt-1 text-xs text-zinc-600">Suggestions de règlements pour équilibrer automatiquement les soldes.</p>
               <div className="mt-3 space-y-2">
                 {data.settlementSuggestions.length === 0 ? (
-                  <p className="text-sm text-zinc-500">Les soldes semblent déjà équilibrés.</p>
+                  <EmptyState title="Soldes déjà équilibrés" description="Aucun règlement conseillé pour le moment." className="py-6" />
                 ) : (
                   data.settlementSuggestions.map((row, idx) => (
                     <div key={`${row.fromMemberName}-${row.toMemberName}-${idx}`} className="rounded-lg border border-zinc-200 px-3 py-2 text-sm">
@@ -280,21 +283,25 @@ export default async function FinancesPage({
           <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">Revenus</h2>
             <div className="mt-3 space-y-2">
-              {data.revenues.map((revenue) => (
-                <div key={revenue.id} className="rounded-lg border border-zinc-200 px-3 py-2 text-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="font-medium text-zinc-900">
-                      {revenue.description} <span className="text-zinc-500">({revenue.source})</span>
+              {data.revenues.length === 0 ? (
+                <EmptyState title="Aucun revenu saisi cette année." description="Ajoute un revenu pour démarrer le suivi financier." className="py-8" />
+              ) : (
+                data.revenues.map((revenue) => (
+                  <div key={revenue.id} className="rounded-lg border border-zinc-200 px-3 py-2 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-medium text-zinc-900">
+                        {revenue.description} <span className="text-zinc-500">({revenue.source})</span>
+                      </div>
+                      <div className="font-semibold">
+                        {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(revenue.netAmount)}
+                      </div>
                     </div>
-                    <div className="font-semibold">
-                      {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(revenue.netAmount)}
+                    <div className="text-xs text-zinc-600">
+                      {revenue.date} • brut {revenue.grossAmount} • déductions {revenue.deductions ?? 0} • {revenue.receivedByName ?? "N/A"}
                     </div>
                   </div>
-                  <div className="text-xs text-zinc-600">
-                    {revenue.date} • brut {revenue.grossAmount} • déductions {revenue.deductions ?? 0} • {revenue.receivedByName ?? "N/A"}
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -345,6 +352,7 @@ export default async function FinancesPage({
               Export PDF
             </a>
           </div>
+          {reportingData ? <ReportingCharts data={reportingData} /> : null}
         </section>
       ) : null}
     </div>

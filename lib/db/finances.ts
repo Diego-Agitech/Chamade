@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { compensationPayments, expenseCategories, expenses, members, revenues } from "@/lib/db/schema";
 
-type FinanceTab = "dashboard" | "opex" | "capex" | "revenues" | "reporting";
+type FinanceTab = "reporting" | "opex" | "capex" | "revenues" | "claims";
 
 async function requireSessionMember() {
   const session = await auth();
@@ -20,7 +20,7 @@ function yearRange(year: number) {
   };
 }
 
-export async function getFinancesPageData(year = new Date().getFullYear(), tab: FinanceTab = "dashboard") {
+export async function getFinancesPageData(year = new Date().getFullYear(), tab: FinanceTab = "reporting") {
   await requireSessionMember();
 
   const { start, end } = yearRange(year);

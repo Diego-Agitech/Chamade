@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AppHeader } from "@/components/shared/AppHeader";
+import { BottomNav } from "@/components/shared/BottomNav";
 
 export default async function AuthenticatedLayout({
   children,
@@ -23,10 +24,11 @@ export default async function AuthenticatedLayout({
       />
       <main
         id="main-content"
-        className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6"
+        className="mx-auto w-full max-w-6xl px-4 py-6 pb-20 sm:px-6 md:pb-0"
       >
         {children}
       </main>
+      <BottomNav />
     </div>
   );
 }

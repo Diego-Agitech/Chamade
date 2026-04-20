@@ -25,9 +25,6 @@ export function AppHeader({ user }: AppHeaderProps) {
         </div>
         <UserMenu name={user.name} email={user.email} color={user.color} />
       </div>
-      <div className="border-t border-border/60 px-4 py-2 md:hidden">
-        <MainNav />
-      </div>
     </header>
   );
 }

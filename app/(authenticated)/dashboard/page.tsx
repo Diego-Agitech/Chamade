@@ -2,6 +2,7 @@ import { KeyContactsPanel } from "@/components/contacts/KeyContactsPanel";
 import Link from "next/link";
 import { KpiGrid } from "@/components/shared/KpiGrid";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveKeyContacts } from "@/lib/db/contacts";
 import { getDashboardData } from "@/lib/db/dashboard";
 
@@ -16,17 +17,20 @@ export default async function DashboardPage() {
         description="Vue d'ensemble rapide de la propriété: agenda, tâches, finances."
         actions={
           <>
-            <Link href="/agenda" className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white">
+            <Link href="/agenda" className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
               Nouvel agenda
             </Link>
-            <Link href="/todos?view=list" className="rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700">
+            <Link href="/todos?view=list" className="rounded-md border border-border px-3 py-2 text-sm font-medium text-muted-foreground">
               Voir les tâches
+            </Link>
+            <Link href="#contacts-cles" className="rounded-md border border-border px-3 py-2 text-sm font-medium text-muted-foreground">
+              Contacts clé
             </Link>
           </>
         }
       />
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <KpiGrid
           items={[
             { title: "Todos ouverts", value: data.kpis.todosOpen.toString(), subtitle: `${data.kpis.todosTotal} au total` },
@@ -38,16 +42,16 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-900">Prochains séjours</h2>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">Prochains séjours</h2>
           <div className="mt-3 space-y-2">
             {data.upcomingStays.length === 0 ? (
-              <p className="text-sm text-zinc-500">Aucun séjour à venir.</p>
+              <EmptyState title="Le mas attend sa prochaine visite 🌿" description="Ajoute un séjour pour alimenter l'agenda." className="py-6" />
             ) : (
               data.upcomingStays.map((stay) => (
-                <div key={stay.id} className="rounded-lg border border-zinc-200 px-3 py-2 text-sm">
-                  <p className="font-medium text-zinc-900">{stay.memberName ?? stay.guestName ?? "Séjour"}</p>
-                  <p className="text-xs text-zinc-600">
+                <div key={stay.id} className="rounded-lg border border-border px-3 py-2 text-sm">
+                  <p className="font-medium text-foreground">{stay.memberName ?? stay.guestName ?? "Séjour"}</p>
+                  <p className="text-xs text-muted-foreground">
                     {stay.startDate} - {stay.endDate} {stay.isRental ? "• Location" : "• Famille"}
                   </p>
                 </div>
@@ -56,16 +60,16 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-900">Tâches prioritaires</h2>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">Tâches prioritaires</h2>
           <div className="mt-3 space-y-2">
             {data.upcomingTodos.length === 0 ? (
-              <p className="text-sm text-zinc-500">Aucune tâche ouverte.</p>
+              <EmptyState title="Tout est en ordre — rien à faire ici." description="Aucune tâche ouverte pour l'instant." className="py-6" />
             ) : (
               data.upcomingTodos.map((todo) => (
-                <div key={todo.id} className="rounded-lg border border-zinc-200 px-3 py-2 text-sm">
-                  <p className="font-medium text-zinc-900">{todo.title}</p>
-                  <p className="text-xs text-zinc-600">
+                <div key={todo.id} className="rounded-lg border border-border px-3 py-2 text-sm">
+                  <p className="font-medium text-foreground">{todo.title}</p>
+                  <p className="text-xs text-muted-foreground">
                     Priorité {todo.priority} {todo.dueDate ? `• Échéance ${todo.dueDate}` : ""} {todo.assignedName ? `• ${todo.assignedName}` : ""}
                   </p>
                 </div>
@@ -75,7 +79,9 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <KeyContactsPanel contacts={contacts} />
+      <div id="contacts-cles">
+        <KeyContactsPanel contacts={contacts} />
+      </div>
     </div>
   );
 }

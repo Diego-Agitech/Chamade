@@ -4,7 +4,7 @@ import { KpiGrid } from "@/components/shared/KpiGrid";
 
 type FinancesData = {
   year: number;
-  tab: "dashboard" | "opex" | "capex" | "revenues" | "reporting";
+  tab: "reporting" | "opex" | "capex" | "revenues" | "claims";
   kpis: {
     opex: number;
     capex: number;
