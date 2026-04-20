@@ -4,6 +4,24 @@ import { z } from "zod";
 import authConfig from "@/auth.config";
 import { verifyPassword } from "@/lib/auth/hash";
 
+function normalizeAbsoluteUrl(value?: string) {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    return new URL(withProtocol).toString().replace(/\/$/, "");
+  } catch {
+    return undefined;
+  }
+}
+
+const normalizedAuthUrl = normalizeAbsoluteUrl(process.env.AUTH_URL ?? process.env.NEXTAUTH_URL);
+if (normalizedAuthUrl) {
+  process.env.AUTH_URL = normalizedAuthUrl;
+  process.env.NEXTAUTH_URL = normalizedAuthUrl;
+}
+
 type SessionUser = DefaultSession["user"] & {
   id: string;
   color: string;
