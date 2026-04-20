@@ -13,7 +13,7 @@ export default async function AuthenticatedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#f3ede2]">
+    <div className="min-h-screen bg-background">
       <AppHeader
         user={{
           name: session.user.name ?? "Membre",
@@ -21,7 +21,12 @@ export default async function AuthenticatedLayout({
           color: session.user.color ?? "#3b82f6",
         }}
       />
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">{children}</main>
+      <main
+        id="main-content"
+        className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6"
+      >
+        {children}
+      </main>
     </div>
   );
 }
