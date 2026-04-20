@@ -6,6 +6,12 @@ import { members, todoCategories, todos } from "@/lib/db/schema";
 export type TodoPriority = "low" | "medium" | "high";
 export type TodoStatus = "todo" | "in_progress" | "done";
 
+function isMissingTodoStatusColumnError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return message.includes("no such column") && message.includes("todos.status");
+}
+
 async function requireSessionMember() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -61,31 +67,83 @@ export async function getTodosPageData(
     activeStatus === "overdue" ? and(eq(todos.isDone, false), isNotNull(todos.dueDate), lt(todos.dueDate, today)) : undefined,
   ].filter((condition) => Boolean(condition));
 
-  const todosRows = selected
-    ? await db
-        .select({
-          id: todos.id,
-          title: todos.title,
-          description: todos.description,
-          isDone: todos.isDone,
-          status: todos.status,
-          priority: todos.priority,
-          dueDate: todos.dueDate,
-          assignedTo: todos.assignedTo,
-          assignedName: members.name,
-          assignedColor: members.color,
-          createdAt: todos.createdAt,
-        })
-        .from(todos)
-        .leftJoin(members, eq(todos.assignedTo, members.id))
-        .where(todoFilters.length > 0 ? and(...todoFilters) : undefined)
-        .orderBy(
-          asc(todos.isDone),
-          sql`case ${todos.priority} when 'high' then 0 when 'medium' then 1 else 2 end`,
-          asc(todos.dueDate),
-          desc(todos.createdAt)
-        )
-    : [];
+  const fetchTodosWithStatus = async () =>
+    db
+      .select({
+        id: todos.id,
+        title: todos.title,
+        description: todos.description,
+        isDone: todos.isDone,
+        status: todos.status,
+        priority: todos.priority,
+        dueDate: todos.dueDate,
+        assignedTo: todos.assignedTo,
+        assignedName: members.name,
+        assignedColor: members.color,
+        createdAt: todos.createdAt,
+      })
+      .from(todos)
+      .leftJoin(members, eq(todos.assignedTo, members.id))
+      .where(todoFilters.length > 0 ? and(...todoFilters) : undefined)
+      .orderBy(
+        asc(todos.isDone),
+        sql`case ${todos.priority} when 'high' then 0 when 'medium' then 1 else 2 end`,
+        asc(todos.dueDate),
+        desc(todos.createdAt)
+      );
+
+  const fetchTodosLegacy = async () =>
+    db
+      .select({
+        id: todos.id,
+        title: todos.title,
+        description: todos.description,
+        isDone: todos.isDone,
+        priority: todos.priority,
+        dueDate: todos.dueDate,
+        assignedTo: todos.assignedTo,
+        assignedName: members.name,
+        assignedColor: members.color,
+        createdAt: todos.createdAt,
+      })
+      .from(todos)
+      .leftJoin(members, eq(todos.assignedTo, members.id))
+      .where(todoFilters.length > 0 ? and(...todoFilters) : undefined)
+      .orderBy(
+        asc(todos.isDone),
+        sql`case ${todos.priority} when 'high' then 0 when 'medium' then 1 else 2 end`,
+        asc(todos.dueDate),
+        desc(todos.createdAt)
+      );
+
+  let todosRows: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    isDone: boolean | null;
+    status: TodoStatus;
+    priority: TodoPriority | null;
+    dueDate: string | null;
+    assignedTo: string | null;
+    assignedName: string | null;
+    assignedColor: string | null;
+    createdAt: string | null;
+  }> = [];
+
+  if (selected) {
+    try {
+      todosRows = await fetchTodosWithStatus();
+    } catch (error) {
+      if (!isMissingTodoStatusColumnError(error)) {
+        throw error;
+      }
+      const legacyRows = await fetchTodosLegacy();
+      todosRows = legacyRows.map((row) => ({
+        ...row,
+        status: row.isDone ? "done" : "todo",
+      }));
+    }
+  }
 
   const allMembers = await db
     .select({
@@ -146,7 +204,7 @@ export async function createTodo(input: {
 }) {
   const sessionUser = await requireSessionMember();
 
-  await db.insert(todos).values({
+  const values = {
     categoryId: input.categoryId,
     title: input.title,
     description: input.description || null,
@@ -157,34 +215,79 @@ export async function createTodo(input: {
     createdBy: sessionUser.id,
     assignedTo: input.assignedTo || null,
     dueDate: input.dueDate || null,
-  });
+  };
+
+  try {
+    await db.insert(todos).values(values);
+  } catch (error) {
+    if (!isMissingTodoStatusColumnError(error)) {
+      throw error;
+    }
+    await db.insert(todos).values({
+      categoryId: values.categoryId,
+      title: values.title,
+      description: values.description,
+      priority: values.priority,
+      isDone: values.isDone,
+      completedAt: values.completedAt,
+      createdBy: values.createdBy,
+      assignedTo: values.assignedTo,
+      dueDate: values.dueDate,
+    });
+  }
 }
 
 export async function toggleTodo(todoId: string, isDone: boolean) {
   await requireSessionMember();
 
-  await db
-    .update(todos)
-    .set({
-      isDone,
-      status: isDone ? "done" : "todo",
-      completedAt: isDone ? new Date().toISOString() : null,
-    })
-    .where(eq(todos.id, todoId));
+  try {
+    await db
+      .update(todos)
+      .set({
+        isDone,
+        status: isDone ? "done" : "todo",
+        completedAt: isDone ? new Date().toISOString() : null,
+      })
+      .where(eq(todos.id, todoId));
+  } catch (error) {
+    if (!isMissingTodoStatusColumnError(error)) {
+      throw error;
+    }
+    await db
+      .update(todos)
+      .set({
+        isDone,
+        completedAt: isDone ? new Date().toISOString() : null,
+      })
+      .where(eq(todos.id, todoId));
+  }
 }
 
 export async function updateTodoStatus(todoId: string, status: TodoStatus) {
   await requireSessionMember();
 
   const isDone = status === "done";
-  await db
-    .update(todos)
-    .set({
-      status,
-      isDone,
-      completedAt: isDone ? new Date().toISOString() : null,
-    })
-    .where(eq(todos.id, todoId));
+  try {
+    await db
+      .update(todos)
+      .set({
+        status,
+        isDone,
+        completedAt: isDone ? new Date().toISOString() : null,
+      })
+      .where(eq(todos.id, todoId));
+  } catch (error) {
+    if (!isMissingTodoStatusColumnError(error)) {
+      throw error;
+    }
+    await db
+      .update(todos)
+      .set({
+        isDone,
+        completedAt: isDone ? new Date().toISOString() : null,
+      })
+      .where(eq(todos.id, todoId));
+  }
 }
 
 export async function deleteTodo(todoId: string) {
