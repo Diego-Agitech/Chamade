@@ -16,12 +16,17 @@ type ViewSwitcherProps = {
 
 export function ViewSwitcher({ options, activeId, className }: ViewSwitcherProps) {
   return (
-    <nav className={cn("inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white p-1", className)}>
+    <nav
+      className={cn(
+        "inline-flex max-w-full items-center gap-2 overflow-x-auto rounded-xl border border-zinc-200 bg-white p-1 whitespace-nowrap",
+        className
+      )}
+    >
       {options.map((option) => {
         const content = (
           <span
             className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-medium transition",
+              "shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition",
               activeId === option.id ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
             )}
           >

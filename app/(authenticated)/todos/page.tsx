@@ -181,9 +181,9 @@ export default async function TodosPage({
 
                 <div className="grid grid-cols-2 gap-2">
                   <select id="priority" name="priority" defaultValue="medium" className="h-9 w-full rounded-md border border-border px-2 text-sm">
-                    <option value="low">Basse</option>
-                    <option value="medium">Moyenne</option>
-                    <option value="high">Haute</option>
+                    <option value="low">Priorité basse</option>
+                    <option value="medium">Priorité moyenne</option>
+                    <option value="high">Priorité haute</option>
                   </select>
                   <input id="dueDate" name="dueDate" type="date" className="h-9 w-full rounded-md border border-border px-2 text-sm" />
                 </div>

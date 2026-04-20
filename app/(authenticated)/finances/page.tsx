@@ -12,10 +12,10 @@ const FINANCE_ENTITY_NAME = "ChrisPadi SCI";
 
 const tabs: Array<{ id: Tab; label: string }> = [
   { id: "reporting", label: "Reporting" },
-  { id: "opex", label: "OPEX - Dépenses courantes" },
-  { id: "capex", label: "CAPEX - Travaux/Investissements" },
+  { id: "opex", label: "OPEX" },
+  { id: "capex", label: "CAPEX" },
   { id: "revenues", label: "Revenus" },
-  { id: "claims", label: "Créances / Compensations" },
+  { id: "claims", label: "Créances" },
 ];
 
 export default async function FinancesPage({
@@ -50,6 +50,7 @@ export default async function FinancesPage({
             </a>
             <ViewSwitcher
               activeId={tab}
+              className="w-full sm:w-auto"
               options={tabs.map((item) => ({
                 id: item.id,
                 label: item.label,
