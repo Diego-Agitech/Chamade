@@ -14,6 +14,22 @@ const createTodoSchema = z.object({
   dueDate: z.string().optional(),
 });
 
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+
+async function toAttachmentDataUrl(file: File | null) {
+  if (!file || file.size === 0) return undefined;
+  if (!file.type.startsWith("image/")) {
+    throw new Error("La pièce jointe doit être une image.");
+  }
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    throw new Error("Image trop lourde (max 4MB).");
+  }
+
+  const bytes = await file.arrayBuffer();
+  const base64 = Buffer.from(bytes).toString("base64");
+  return `data:${file.type};base64,${base64}`;
+}
+
 export async function createTodoAction(formData: FormData) {
   const parsed = createTodoSchema.safeParse({
     categoryId: formData.get("categoryId"),
@@ -29,7 +45,13 @@ export async function createTodoAction(formData: FormData) {
     throw new Error(parsed.error.issues[0]?.message || "Invalid todo form.");
   }
 
-  await createTodo(parsed.data);
+  const attachment = formData.get("attachment");
+  const attachmentDataUrl = await toAttachmentDataUrl(attachment instanceof File ? attachment : null);
+
+  await createTodo({
+    ...parsed.data,
+    attachmentDataUrl,
+  });
   revalidatePath("/todos");
 }
 

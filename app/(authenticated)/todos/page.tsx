@@ -201,6 +201,19 @@ export default async function TodosPage({
                     </option>
                   ))}
                 </select>
+                <div className="space-y-1">
+                  <label htmlFor="attachment" className="text-xs font-medium text-muted-foreground">
+                    Pièce jointe photo
+                  </label>
+                  <input
+                    id="attachment"
+                    name="attachment"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="h-9 w-full rounded-md border border-border px-2 text-sm file:mr-2 file:rounded file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs"
+                  />
+                </div>
 
                 <button type="submit" className="h-9 w-full rounded-md bg-primary text-sm font-medium text-primary-foreground transition hover:opacity-90">
                   Ajouter
@@ -249,6 +262,13 @@ export default async function TodosPage({
                           ) : null}
                         </div>
                         {todo.description ? <p className="mt-1 text-sm">{todo.description}</p> : null}
+                        {todo.attachmentUrl ? (
+                          <img
+                            src={todo.attachmentUrl}
+                            alt={`Photo liée à ${todo.title}`}
+                            className="mt-2 max-h-40 w-auto rounded-md border border-border object-cover"
+                          />
+                        ) : null}
                         {todo.assignedName ? (
                           <p className="mt-1 text-xs">
                             Assigné à <span style={{ color: todo.assignedColor ?? "#27272a" }}>{todo.assignedName}</span>
@@ -316,6 +336,13 @@ export default async function TodosPage({
                     column.todos.map((todo) => (
                       <article key={todo.id} className="rounded-md border border-border bg-card p-2 text-sm">
                         <p className={`font-medium text-foreground ${todo.isDone ? "line-through" : ""}`}>{todo.title}</p>
+                        {todo.attachmentUrl ? (
+                          <img
+                            src={todo.attachmentUrl}
+                            alt={`Photo liée à ${todo.title}`}
+                            className="mt-2 max-h-28 w-full rounded-md border border-border object-cover"
+                          />
+                        ) : null}
                         {todo.dueDate ? <p className="mt-1 text-xs text-muted-foreground">Échéance: {todo.dueDate}</p> : null}
                         {todo.assignedName ? <p className="mt-1 text-xs text-muted-foreground">Assigné à {todo.assignedName}</p> : null}
                       </article>

@@ -6,7 +6,7 @@ import { members, todoCategories, todos } from "@/lib/db/schema";
 export type TodoPriority = "low" | "medium" | "high";
 export type TodoStatus = "todo" | "in_progress" | "done";
 
-function isMissingTodoStatusColumnError(error: unknown) {
+function isMissingTodoColumnError(error: unknown, columnName: string) {
   const chunks: string[] = [];
 
   const pushText = (value: unknown) => {
@@ -35,7 +35,15 @@ function isMissingTodoStatusColumnError(error: unknown) {
 
   walk(error);
   const fullMessage = chunks.join(" ");
-  return fullMessage.includes("no such column") && fullMessage.includes("todos.status");
+  return fullMessage.includes("no such column") && fullMessage.includes(columnName.toLowerCase());
+}
+
+function isMissingTodoStatusColumnError(error: unknown) {
+  return isMissingTodoColumnError(error, "todos.status");
+}
+
+function isMissingTodoAttachmentColumnError(error: unknown) {
+  return isMissingTodoColumnError(error, "todos.attachment_url");
 }
 
 async function requireSessionMember() {
@@ -99,6 +107,32 @@ export async function getTodosPageData(
         id: todos.id,
         title: todos.title,
         description: todos.description,
+        attachmentUrl: todos.attachmentUrl,
+        isDone: todos.isDone,
+        status: sql<TodoStatus>`coalesce(${todos.status}, 'todo')`,
+        priority: todos.priority,
+        dueDate: todos.dueDate,
+        assignedTo: todos.assignedTo,
+        assignedName: members.name,
+        assignedColor: members.color,
+        createdAt: todos.createdAt,
+      })
+      .from(todos)
+      .leftJoin(members, eq(todos.assignedTo, members.id))
+      .where(todoFilters.length > 0 ? and(...todoFilters) : undefined)
+      .orderBy(
+        asc(todos.isDone),
+        sql`case ${todos.priority} when 'high' then 0 when 'medium' then 1 else 2 end`,
+        asc(todos.dueDate),
+        desc(todos.createdAt)
+      );
+
+  const fetchTodosWithStatusNoAttachment = async () =>
+    db
+      .select({
+        id: todos.id,
+        title: todos.title,
+        description: todos.description,
         isDone: todos.isDone,
         status: sql<TodoStatus>`coalesce(${todos.status}, 'todo')`,
         priority: todos.priority,
@@ -146,6 +180,7 @@ export async function getTodosPageData(
     id: string;
     title: string;
     description: string | null;
+    attachmentUrl: string | null;
     isDone: boolean | null;
     status: TodoStatus;
     priority: TodoPriority | null;
@@ -160,14 +195,19 @@ export async function getTodosPageData(
     try {
       todosRows = await fetchTodosWithStatus();
     } catch (error) {
-      if (!isMissingTodoStatusColumnError(error)) {
+      if (isMissingTodoAttachmentColumnError(error)) {
+        const noAttachmentRows = await fetchTodosWithStatusNoAttachment();
+        todosRows = noAttachmentRows.map((row) => ({ ...row, attachmentUrl: null }));
+      } else if (!isMissingTodoStatusColumnError(error)) {
         throw error;
+      } else {
+        const legacyRows = await fetchTodosLegacy();
+        todosRows = legacyRows.map((row) => ({
+          ...row,
+          attachmentUrl: null,
+          status: row.isDone ? "done" : "todo",
+        }));
       }
-      const legacyRows = await fetchTodosLegacy();
-      todosRows = legacyRows.map((row) => ({
-        ...row,
-        status: row.isDone ? "done" : "todo",
-      }));
     }
   }
 
@@ -223,6 +263,7 @@ export async function createTodo(input: {
   categoryId: string;
   title: string;
   description?: string;
+  attachmentDataUrl?: string;
   priority: TodoPriority;
   status: TodoStatus;
   assignedTo?: string;
@@ -234,6 +275,7 @@ export async function createTodo(input: {
     categoryId: input.categoryId,
     title: input.title,
     description: input.description || null,
+    attachmentUrl: input.attachmentDataUrl || null,
     priority: input.priority,
     status: input.status,
     isDone: input.status === "done",
@@ -246,7 +288,7 @@ export async function createTodo(input: {
   try {
     await db.insert(todos).values(values);
   } catch (error) {
-    if (!isMissingTodoStatusColumnError(error)) {
+    if (!(isMissingTodoStatusColumnError(error) || isMissingTodoAttachmentColumnError(error))) {
       throw error;
     }
     await db.insert(todos).values({

@@ -56,6 +56,7 @@ export const todos = sqliteTable("todos", {
   categoryId: text("category_id").references(() => todoCategories.id),
   title: text("title").notNull(),
   description: text("description"),
+  attachmentUrl: text("attachment_url"),
   isDone: integer("is_done", { mode: "boolean" }).default(false),
   status: text("status", { enum: ["todo", "in_progress", "done"] }).default("todo"),
   priority: text("priority", { enum: ["low", "medium", "high"] }).default("medium"),
