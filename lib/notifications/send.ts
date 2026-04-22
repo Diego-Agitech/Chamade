@@ -1,8 +1,25 @@
 import { render } from "@react-email/render";
 import { Resend } from "resend";
-import { MonthlyFinanceReportEmail, NotificationTestEmail, PasswordResetEmail, WeeklyDigestEmail } from "@/emails/templates";
+import {
+  MonthlyFinanceReportEmail,
+  NewExpenseEmail,
+  NewStayEmail,
+  NotificationTestEmail,
+  PasswordResetEmail,
+  StayOverlapEmail,
+  TodoAssignedEmail,
+  WeeklyDigestEmail,
+} from "@/emails/templates";
 
-type NotificationType = "password_reset" | "notification_test" | "weekly_digest" | "monthly_finance_report";
+type NotificationType =
+  | "password_reset"
+  | "notification_test"
+  | "weekly_digest"
+  | "monthly_finance_report"
+  | "new_stay"
+  | "stay_overlap"
+  | "todo_assigned"
+  | "new_expense";
 
 type PasswordResetPayload = {
   email: string;
@@ -115,5 +132,156 @@ export async function sendMonthlyFinanceReportEmail({
     subject: `Rapport financier ${yearMonth}`,
     html: await render(MonthlyFinanceReportEmail({ yearMonth, summary })),
     type: "monthly_finance_report",
+  });
+}
+
+export async function sendNewStayEmail({
+  email,
+  recipientName,
+  createdByName,
+  stayType,
+  personLabel,
+  startDate,
+  endDate,
+  notes,
+  agendaUrl,
+}: {
+  email: string;
+  recipientName: string;
+  createdByName: string;
+  stayType: "Famille" | "Location";
+  personLabel: string;
+  startDate: string;
+  endDate: string;
+  notes?: string;
+  agendaUrl: string;
+}) {
+  return sendWithResend({
+    email,
+    subject: `Nouveau sejour: ${startDate} -> ${endDate}`,
+    html: await render(
+      NewStayEmail({
+        recipientName,
+        createdByName,
+        stayType,
+        personLabel,
+        startDate,
+        endDate,
+        notes,
+        agendaUrl,
+      })
+    ),
+    type: "new_stay",
+  });
+}
+
+export async function sendStayOverlapEmail({
+  email,
+  recipientName,
+  createdByName,
+  startDate,
+  endDate,
+  conflicts,
+  agendaUrl,
+}: {
+  email: string;
+  recipientName: string;
+  createdByName: string;
+  startDate: string;
+  endDate: string;
+  conflicts: string[];
+  agendaUrl: string;
+}) {
+  return sendWithResend({
+    email,
+    subject: `Alerte chevauchement: ${startDate} -> ${endDate}`,
+    html: await render(
+      StayOverlapEmail({
+        recipientName,
+        createdByName,
+        startDate,
+        endDate,
+        conflicts,
+        agendaUrl,
+      })
+    ),
+    type: "stay_overlap",
+  });
+}
+
+export async function sendTodoAssignedEmail({
+  email,
+  assigneeName,
+  assignedByName,
+  title,
+  priority,
+  dueDate,
+  status,
+  todosUrl,
+}: {
+  email: string;
+  assigneeName: string;
+  assignedByName: string;
+  title: string;
+  priority: string;
+  dueDate?: string;
+  status: string;
+  todosUrl: string;
+}) {
+  return sendWithResend({
+    email,
+    subject: `Nouvelle tache assignee: ${title}`,
+    html: await render(
+      TodoAssignedEmail({
+        assigneeName,
+        assignedByName,
+        title,
+        priority,
+        dueDate,
+        status,
+        todosUrl,
+      })
+    ),
+    type: "todo_assigned",
+  });
+}
+
+export async function sendNewExpenseEmail({
+  email,
+  recipientName,
+  createdByName,
+  nature,
+  amount,
+  date,
+  category,
+  description,
+  financesUrl,
+}: {
+  email: string;
+  recipientName: string;
+  createdByName: string;
+  nature: string;
+  amount: string;
+  date: string;
+  category: string;
+  description: string;
+  financesUrl: string;
+}) {
+  return sendWithResend({
+    email,
+    subject: `Nouvelle depense ${nature}: ${amount}`,
+    html: await render(
+      NewExpenseEmail({
+        recipientName,
+        createdByName,
+        nature,
+        amount,
+        date,
+        category,
+        description,
+        financesUrl,
+      })
+    ),
+    type: "new_expense",
   });
 }

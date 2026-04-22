@@ -11,7 +11,7 @@ type Tab = "reporting" | "opex" | "capex" | "revenues" | "claims";
 const FINANCE_ENTITY_NAME = "ChrisPadi SCI";
 
 const tabs: Array<{ id: Tab; label: string }> = [
-  { id: "reporting", label: "Reporting" },
+  { id: "reporting", label: "Vue d'ensemble" },
   { id: "opex", label: "OPEX" },
   { id: "capex", label: "CAPEX" },
   { id: "revenues", label: "Revenus" },
@@ -30,24 +30,32 @@ export default async function FinancesPage({
   const reportingData = tab === "reporting" ? await getFinanceReportingData(year) : null;
   const opexCategories = data.categories.filter((c) => c.nature === "OPEX");
   const capexCategories = data.categories.filter((c) => c.nature === "CAPEX");
-  const addRecordHrefByTab: Record<Tab, string> = {
-    reporting: "/finances?tab=opex",
-    opex: "#finance-create",
-    capex: "#finance-create",
-    revenues: "#finance-create",
-    claims: "#finance-create",
-  };
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 overflow-x-hidden">
       <PageHeader
         title="Finances"
         description={`Pilotage financier de ${FINANCE_ENTITY_NAME}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <a href={addRecordHrefByTab[tab]} className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
-              Ajouter un enregistrement
-            </a>
+            <details className="relative">
+              <summary className="cursor-pointer list-none rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+                Ajouter un enregistrement
+              </summary>
+              <div className="absolute left-0 z-10 mt-2 min-w-[220px] rounded-md border border-border bg-card p-1 shadow-md">
+                <a href={`/finances?tab=opex&year=${year}#finance-create`} className="block rounded px-3 py-2 text-sm hover:bg-muted">
+                  OPEX
+                </a>
+                <a href={`/finances?tab=capex&year=${year}#finance-create`} className="block rounded px-3 py-2 text-sm hover:bg-muted">
+                  CAPEX
+                </a>
+                <a href={`/finances?tab=claims&year=${year}`} className="block rounded px-3 py-2 text-sm hover:bg-muted">
+                  Créance
+                </a>
+                <a href={`/finances?tab=claims&year=${year}#finance-create`} className="block rounded px-3 py-2 text-sm hover:bg-muted">
+                  Paiement
+                </a>
+              </div>
+            </details>
             <ViewSwitcher
               activeId={tab}
               className="w-full sm:w-auto"
@@ -84,8 +92,8 @@ export default async function FinancesPage({
       {tab === "reporting" ? <FinancesClient data={data} /> : null}
 
       {tab === "claims" ? (
-        <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
-          <div id="finance-create" className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <section className="grid min-w-0 gap-4 lg:grid-cols-[360px_1fr]">
+          <div id="finance-create" className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Paiement de compensation</h2>
             <p className="mt-1 text-xs text-zinc-600">Permet d&apos;équilibrer les créances entre membres.</p>
             <form action={createCompensationPaymentAction} className="mt-3 space-y-2">
@@ -116,8 +124,8 @@ export default async function FinancesPage({
             </form>
           </div>
 
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="min-w-0 space-y-4">
+            <div className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
               <h2 className="text-lg font-semibold text-zinc-900">Soldes par membre</h2>
               <p className="mt-1 text-xs text-zinc-600">Solde = Avancé (OPEX+CAPEX) - Encaissé (revenus) - compensation sortante + compensation entrante</p>
               <div className="mt-3 space-y-2">
@@ -138,7 +146,7 @@ export default async function FinancesPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
               <h2 className="text-lg font-semibold text-zinc-900">Paiements de compensation</h2>
               <div className="mt-3 space-y-2">
                 {data.compensations.length === 0 ? (
@@ -164,7 +172,7 @@ export default async function FinancesPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
               <h2 className="text-lg font-semibold text-zinc-900">Qui doit à qui</h2>
               <p className="mt-1 text-xs text-zinc-600">Suggestions de règlements pour équilibrer automatiquement les soldes.</p>
               <div className="mt-3 space-y-2">
@@ -191,8 +199,8 @@ export default async function FinancesPage({
       ) : null}
 
       {tab === "opex" || tab === "capex" ? (
-        <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
-          <div id="finance-create" className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <section className="grid min-w-0 gap-4 lg:grid-cols-[360px_1fr]">
+          <div id="finance-create" className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
               Ajouter une dépense {tab === "opex" ? "OPEX - Dépenses courantes" : "CAPEX - Travaux/Investissements"}
             </h2>
@@ -240,7 +248,7 @@ export default async function FinancesPage({
             </form>
           </div>
 
-          <div id="finance-create" className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div id="finance-create" className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">
               {tab === "opex" ? "OPEX - Dépenses courantes" : "CAPEX - Travaux/Investissements"}
             </h2>
@@ -262,8 +270,8 @@ export default async function FinancesPage({
       ) : null}
 
       {tab === "revenues" ? (
-        <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <section className="grid min-w-0 gap-4 lg:grid-cols-[360px_1fr]">
+          <div className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Ajouter un revenu</h2>
             <form action={createRevenueAction} className="mt-3 space-y-2">
               <select name="source" required className="h-9 w-full rounded-md border border-zinc-300 px-2 text-sm">
@@ -293,7 +301,7 @@ export default async function FinancesPage({
             </form>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">Revenus</h2>
             <div className="mt-3 space-y-2">
               {data.revenues.length === 0 ? (
@@ -321,9 +329,9 @@ export default async function FinancesPage({
       ) : null}
 
       {tab === "reporting" ? (
-        <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <section className="min-w-0 space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-900">Reporting annuel</h2>
+            <h2 className="text-lg font-semibold text-zinc-900">Vue d&apos;ensemble annuelle</h2>
             <p className="mt-1 text-sm text-zinc-600">Synthèse exécutive, tendances mensuelles et distribution par membre.</p>
           </div>
 

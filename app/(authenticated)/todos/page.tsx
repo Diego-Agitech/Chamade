@@ -67,7 +67,7 @@ export default async function TodosPage({
             <ViewSwitcher
               activeId={view}
               options={[
-                { id: "dashboard", label: "Tableau de bord", href: buildTodosUrl({ nextView: "dashboard", status: "all", assignedTo: "" }) },
+                { id: "dashboard", label: "Vue d'ensemble", href: buildTodosUrl({ nextView: "dashboard", status: "all", assignedTo: "" }) },
                 { id: "list", label: "Liste", href: buildTodosUrl({ nextView: "list", status: "all", assignedTo: "" }) },
                 { id: "kanban", label: "Kanban", href: buildTodosUrl({ nextView: "kanban", status: "all", assignedTo: "" }) },
               ]}

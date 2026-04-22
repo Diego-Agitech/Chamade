@@ -52,8 +52,8 @@ export function ReportingCharts({ data }: { data: ReportingData }) {
   ];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-xl border border-border bg-card p-4">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card p-4">
         <h3 className="mb-3 font-serif text-xl text-foreground">Tendance mensuelle</h3>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -62,7 +62,7 @@ export function ReportingCharts({ data }: { data: ReportingData }) {
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
               <Line type="monotone" dataKey="opex" stroke="var(--chart-1)" strokeWidth={2} />
               <Line type="monotone" dataKey="capex" stroke="var(--chart-4)" strokeWidth={2} />
               <Line type="monotone" dataKey="revenues" stroke="var(--chart-2)" strokeWidth={2} />
@@ -71,7 +71,7 @@ export function ReportingCharts({ data }: { data: ReportingData }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card p-4">
         <h3 className="mb-3 font-serif text-xl text-foreground">OPEX vs CAPEX vs Revenus</h3>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -82,13 +82,13 @@ export function ReportingCharts({ data }: { data: ReportingData }) {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card p-4">
         <h3 className="mb-3 font-serif text-xl text-foreground">Revenus par source</h3>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -97,7 +97,7 @@ export function ReportingCharts({ data }: { data: ReportingData }) {
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="rental" stackId="a" fill="var(--chart-2)" />
               <Bar dataKey="vignes" stackId="a" fill="var(--chart-5)" />
               <Bar dataKey="divers" stackId="a" fill="var(--chart-3)" />
@@ -106,7 +106,7 @@ export function ReportingCharts({ data }: { data: ReportingData }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card p-4">
         <h3 className="mb-3 font-serif text-xl text-foreground">Répartition OPEX par catégorie</h3>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -117,7 +117,7 @@ export function ReportingCharts({ data }: { data: ReportingData }) {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
             </PieChart>
           </ResponsiveContainer>
         </div>

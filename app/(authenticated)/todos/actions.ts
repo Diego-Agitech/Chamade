@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { members } from "@/lib/db/schema";
 import { createTodo, deleteTodo, toggleTodo, updateTodoStatus, type TodoPriority, type TodoStatus } from "@/lib/db/todos";
+import { sendTodoAssignedEmail } from "@/lib/notifications/send";
 
 const createTodoSchema = z.object({
   categoryId: z.string().min(1),
@@ -31,6 +36,7 @@ async function toAttachmentDataUrl(file: File | null) {
 }
 
 export async function createTodoAction(formData: FormData) {
+  const session = await auth();
   const parsed = createTodoSchema.safeParse({
     categoryId: formData.get("categoryId"),
     title: formData.get("title"),
@@ -52,6 +58,30 @@ export async function createTodoAction(formData: FormData) {
     ...parsed.data,
     attachmentDataUrl,
   });
+
+  if (parsed.data.assignedTo) {
+    const assignee = await db.query.members.findFirst({
+      where: eq(members.id, parsed.data.assignedTo),
+      columns: {
+        email: true,
+        name: true,
+        notifyOnTodoAssigned: true,
+      },
+    });
+    if (assignee?.notifyOnTodoAssigned && assignee.email) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://gestion.lachamade.be";
+      await sendTodoAssignedEmail({
+        email: assignee.email,
+        assigneeName: assignee.name,
+        assignedByName: session?.user?.name ?? "Membre",
+        title: parsed.data.title,
+        priority: parsed.data.priority,
+        dueDate: parsed.data.dueDate,
+        status: parsed.data.status,
+        todosUrl: `${appUrl}/todos`,
+      });
+    }
+  }
   revalidatePath("/todos");
 }
 

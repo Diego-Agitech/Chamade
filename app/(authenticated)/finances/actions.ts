@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { members } from "@/lib/db/schema";
 import { createCompensationPayment, createExpense, createRevenue } from "@/lib/db/finances";
+import { sendNewExpenseEmail } from "@/lib/notifications/send";
 
 const expenseSchema = z.object({
   nature: z.enum(["OPEX", "CAPEX"]),
@@ -36,6 +41,7 @@ const compensationSchema = z.object({
 });
 
 export async function createExpenseAction(formData: FormData) {
+  const session = await auth();
   const parsed = expenseSchema.parse({
     nature: String(formData.get("nature")),
     categoryId: String(formData.get("categoryId")),
@@ -49,6 +55,28 @@ export async function createExpenseAction(formData: FormData) {
   });
 
   await createExpense(parsed);
+
+  const recipients = await db
+    .select({ email: members.email, name: members.name })
+    .from(members)
+    .where(eq(members.notifyOnNewExpense, true));
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://gestion.lachamade.be";
+  await Promise.all(
+    recipients.map((recipient) =>
+      sendNewExpenseEmail({
+        email: recipient.email,
+        recipientName: recipient.name,
+        createdByName: session?.user?.name ?? "Membre",
+        nature: parsed.nature,
+        amount: new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(parsed.amount),
+        date: parsed.date,
+        category: parsed.categoryId,
+        description: parsed.description,
+        financesUrl: `${appUrl}/finances?tab=${parsed.nature === "OPEX" ? "opex" : "capex"}`,
+      })
+    )
+  );
   revalidatePath("/finances");
 }
 
