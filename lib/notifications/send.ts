@@ -1,5 +1,5 @@
 import { render } from "@react-email/render";
-import { Resend } from "resend";
+import nodemailer, { type Transporter } from "nodemailer";
 import {
   MonthlyFinanceReportEmail,
   NewExpenseEmail,
@@ -62,7 +62,25 @@ async function logNotification({
   }
 }
 
-async function sendWithResend({
+let smtpTransporter: Transporter | null = null;
+
+function getSmtpTransporter() {
+  if (smtpTransporter) {
+    return smtpTransporter;
+  }
+  smtpTransporter = nodemailer.createTransport({
+    host: process.env.MAILGUN_SMTP_HOST ?? "smtp.eu.mailgun.org",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.MAILGUN_SMTP_LOGIN,
+      pass: process.env.MAILGUN_SMTP_PASSWORD,
+    },
+  });
+  return smtpTransporter;
+}
+
+async function sendWithSmtp({
   email,
   subject,
   html,
@@ -73,26 +91,32 @@ async function sendWithResend({
   html: string;
   type: NotificationType;
 }): Promise<NotificationSendResult> {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
+  const fromEmail = process.env.NOTIFICATION_FROM_EMAIL ?? process.env.RESEND_FROM_EMAIL;
+  if (!process.env.MAILGUN_SMTP_LOGIN || !process.env.MAILGUN_SMTP_PASSWORD || !fromEmail) {
     console.info(`[Notification][SIMULATED] to=${email} subject="${subject}"`);
     await logNotification({ email, type, success: true });
     return { simulated: true, ok: true };
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const result = await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL,
-    to: email,
-    subject,
-    html,
-  });
-  const success = !result.error;
+  const transporter = getSmtpTransporter();
+  let success = true;
+  try {
+    await transporter.sendMail({
+      from: fromEmail,
+      to: email,
+      subject,
+      html,
+    });
+  } catch (error) {
+    success = false;
+    console.error("[Notification][SMTP_ERROR]", error);
+  }
   await logNotification({ email, type, success });
   return { simulated: false, ok: success };
 }
 
 export async function sendPasswordResetEmail({ email, resetUrl }: PasswordResetPayload) {
-  return sendWithResend({
+  return sendWithSmtp({
     email,
     subject: "Réinitialisation de mot de passe",
     html: await render(PasswordResetEmail({ resetUrl })),
@@ -101,7 +125,7 @@ export async function sendPasswordResetEmail({ email, resetUrl }: PasswordResetP
 }
 
 export async function sendTestNotificationEmail({ email, name }: { email: string; name: string }) {
-  return sendWithResend({
+  return sendWithSmtp({
     email,
     subject: "Email de test - Notifications Chamade",
     html: await render(NotificationTestEmail({ name })),
@@ -110,7 +134,7 @@ export async function sendTestNotificationEmail({ email, name }: { email: string
 }
 
 export async function sendWeeklyDigestEmail({ email, lines }: { email: string; lines: string[] }) {
-  return sendWithResend({
+  return sendWithSmtp({
     email,
     subject: "Résumé hebdomadaire Chamade",
     html: await render(WeeklyDigestEmail({ lines })),
@@ -127,7 +151,7 @@ export async function sendMonthlyFinanceReportEmail({
   yearMonth: string;
   summary: string;
 }) {
-  return sendWithResend({
+  return sendWithSmtp({
     email,
     subject: `Rapport financier ${yearMonth}`,
     html: await render(MonthlyFinanceReportEmail({ yearMonth, summary })),
@@ -156,7 +180,7 @@ export async function sendNewStayEmail({
   notes?: string;
   agendaUrl: string;
 }) {
-  return sendWithResend({
+  return sendWithSmtp({
     email,
     subject: `Nouveau sejour: ${startDate} -> ${endDate}`,
     html: await render(
@@ -192,7 +216,7 @@ export async function sendStayOverlapEmail({
   conflicts: string[];
   agendaUrl: string;
 }) {
-  return sendWithResend({
+  return sendWithSmtp({
     email,
     subject: `Alerte chevauchement: ${startDate} -> ${endDate}`,
     html: await render(
@@ -228,7 +252,7 @@ export async function sendTodoAssignedEmail({
   status: string;
   todosUrl: string;
 }) {
-  return sendWithResend({
+  return sendWithSmtp({
     email,
     subject: `Nouvelle tache assignee: ${title}`,
     html: await render(
@@ -267,7 +291,7 @@ export async function sendNewExpenseEmail({
   description: string;
   financesUrl: string;
 }) {
-  return sendWithResend({
+  return sendWithSmtp({
     email,
     subject: `Nouvelle depense ${nature}: ${amount}`,
     html: await render(
