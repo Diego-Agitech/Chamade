@@ -18,7 +18,7 @@ export function ViewSwitcher({ options, activeId, className }: ViewSwitcherProps
   return (
     <nav
       className={cn(
-        "inline-flex max-w-full items-center gap-2 overflow-x-auto rounded-xl border border-zinc-200 bg-white p-1 whitespace-nowrap",
+        "flex w-full min-w-0 items-center gap-2 overflow-x-auto overscroll-x-contain rounded-xl border border-zinc-200 bg-white p-1 whitespace-nowrap",
         className
       )}
     >
@@ -36,14 +36,14 @@ export function ViewSwitcher({ options, activeId, className }: ViewSwitcherProps
 
         if (option.href) {
           return (
-            <Link key={option.id} href={option.href}>
+            <Link key={option.id} href={option.href} className="shrink-0">
               {content}
             </Link>
           );
         }
 
         return (
-          <button key={option.id} type="button" onClick={option.onClick}>
+          <button key={option.id} type="button" onClick={option.onClick} className="shrink-0">
             {content}
           </button>
         );
